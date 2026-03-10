@@ -1546,7 +1546,7 @@ const initKnowledgeGraph = () => {
     kgChart.dispose()
   }
 
-  kgChart = echarts.init(container, 'dark')
+  kgChart = echarts.init(container, 'grey')
 
   const option: echarts.EChartsOption = {
     backgroundColor: 'transparent',
@@ -1648,12 +1648,15 @@ const escapeHtml = (value: unknown): string => {
     .replace(/'/g, '&#39;')
 }
 
-const buildMarkerContent = (globalIndex: number, dayIndex: number): string => {
+const buildMarkerContent = (dayNo: number, stopNo: number): string => {
   return `
-    <div class="tripstar-map-marker" title="${escapeHtml(t('common.dayNumber', { day: dayIndex + 1 }))}">
-      <span class="tripstar-map-marker__pulse"></span>
-      <span class="tripstar-map-marker__core">${globalIndex}</span>
-      <span class="tripstar-map-marker__tag">D${dayIndex + 1}</span>
+    <div class="tripstar-map-marker">
+      <span class="tripstar-map-marker__core" aria-hidden="true">
+        <svg fill="#ffffff" width="30px" height="30px" viewBox="0 0 256 256" id="Flat" xmlns="http://www.w3.org/2000/svg">
+          <path d="M231.4248,109.2041,169.36426,86.63574,146.7959,24.57422a19.99984,19.99984,0,0,0-37.5918.001L86.63574,86.63574,24.57422,109.2041a19.99984,19.99984,0,0,0,.001,37.5918l62.06054,22.56836,22.56836,62.06152a19.99984,19.99984,0,0,0,37.5918-.001l22.56836-62.06054,62.06152-22.56836a19.99984,19.99984,0,0,0-.001-37.5918Zm-72.01562,38.24219a19.95591,19.95591,0,0,0-11.96289,11.96289l.001-.001L128,212.88672l-19.44629-53.47754A19.95279,19.95279,0,0,0,96.5918,147.44727L43.11328,128l53.47754-19.44629A19.95279,19.95279,0,0,0,108.55273,96.5918L128,43.11328l19.44629,53.47754a19.95279,19.95279,0,0,0,11.96191,11.96191L212.88672,128Z"/>
+        </svg>
+      </span>
+      <span class="tripstar-map-marker__index" aria-hidden="true">${dayNo}-${stopNo}</span>
     </div>
   `
 }
@@ -1662,37 +1665,18 @@ const buildInfoWindowContent = (attraction: any): string => {
   const name = escapeHtml(attraction.name || t('common.noData'))
   const address = escapeHtml(attraction.address || t('common.noData'))
   const visitDuration = Number.isFinite(attraction.visit_duration) ? attraction.visit_duration : '—'
-  const description = escapeHtml(attraction.description || t('common.noData')).replace(/\n/g, '<br/>')
   const dayAttractionText = escapeHtml(
     t('result.mapInfo.dayAttraction', { day: attraction.dayIndex + 1, index: attraction.attrIndex + 1 })
   )
-  const addressLabel = escapeHtml(t('result.fieldAddress'))
-  const durationLabel = escapeHtml(t('result.fieldVisitDuration'))
-  const descLabel = escapeHtml(t('result.fieldDescription'))
   const minuteUnit = escapeHtml(t('result.minuteUnit'))
 
   return `
-    <article class="tripstar-map-tooltip">
-      <header class="tripstar-map-tooltip__header">
-        <h4 class="tripstar-map-tooltip__title">${name}</h4>
-        <span class="tripstar-map-tooltip__badge">${dayAttractionText}</span>
-      </header>
-      <div class="tripstar-map-tooltip__body">
-        <p class="tripstar-map-tooltip__line">
-          <span class="tripstar-map-tooltip__label">${addressLabel}</span>
-          <span>${address}</span>
-        </p>
-        <p class="tripstar-map-tooltip__line">
-          <span class="tripstar-map-tooltip__label">${durationLabel}</span>
-          <span>${visitDuration}${minuteUnit}</span>
-        </p>
-        <p class="tripstar-map-tooltip__line">
-          <span class="tripstar-map-tooltip__label">${descLabel}</span>
-          <span>${description}</span>
-        </p>
-      </div>
-      <span class="tripstar-map-tooltip__arrow"></span>
-    </article>
+    <div class="tripstar-map-tooltip tripstar-map-tooltip--plain">
+      <p class="tripstar-map-tooltip__line tripstar-map-tooltip__line--title">${name}</p>
+      <p class="tripstar-map-tooltip__line">${dayAttractionText}</p>
+      <p class="tripstar-map-tooltip__line">${address}</p>
+      <p class="tripstar-map-tooltip__line">${visitDuration}${minuteUnit}</p>
+    </div>
   `
 }
 
@@ -1715,35 +1699,35 @@ const ROUTE_STYLE_PRESETS: Record<
 > = {
   driving: {
     strokeColor: '#37b4ff',
-    strokeWeight: 6,
+    strokeWeight: 3.5,
     strokeOpacity: 0.92,
     strokeStyle: 'solid',
     lineJoin: 'round',
     lineCap: 'round',
     outlineColor: 'rgba(4, 19, 32, 0.7)',
-    borderWeight: 2,
+    borderWeight: 1,
   },
   walking: {
     strokeColor: '#6ad38f',
-    strokeWeight: 5,
+    strokeWeight: 3,
     strokeOpacity: 0.9,
     strokeStyle: 'dashed',
     strokeDasharray: [12, 8],
     lineJoin: 'round',
     lineCap: 'round',
     outlineColor: 'rgba(8, 32, 20, 0.5)',
-    borderWeight: 1,
+    borderWeight: 0.8,
   },
   straight: {
-    strokeColor: '#ff9b64',
-    strokeWeight: 4,
-    strokeOpacity: 0.82,
-    strokeStyle: 'dashed',
+    strokeColor: '#ffffff',
+    strokeWeight: 1.5,
+    strokeOpacity: 0.62,
+    strokeStyle: 'solid',
     strokeDasharray: [10, 10],
     lineJoin: 'round',
     lineCap: 'round',
     outlineColor: 'rgba(33, 17, 8, 0.45)',
-    borderWeight: 1,
+    borderWeight: 0.8,
   },
 }
 
@@ -1887,7 +1871,8 @@ const initMap = async () => {
     map = new AMap.Map('amap-container', {
       zoom: 12,
       center: [116.397128, 39.916527], // 默认中心点(北京)
-      viewMode: '3D'
+      viewMode: '3D',
+      mapStyle: 'amap://styles/grey'
     })
 
     // 添加景点标记
@@ -1927,10 +1912,9 @@ const addAttractionMarkers = async (AMap: any) => {
   allAttractions.forEach((attraction, index) => {
     const marker = new AMap.Marker({
       position: [attraction.location.longitude, attraction.location.latitude],
-      title: attraction.name,
-      content: buildMarkerContent(index + 1, attraction.dayIndex),
-      anchor: 'bottom-center',
-      offset: new AMap.Pixel(0, -8),
+      content: buildMarkerContent(attraction.dayIndex + 1, attraction.attrIndex + 1),
+      anchor: 'center',
+      offset: new AMap.Pixel(0, 0),
       zIndex: 120 + index,
     })
 
@@ -1938,11 +1922,18 @@ const addAttractionMarkers = async (AMap: any) => {
     const infoWindow = new AMap.InfoWindow({
       isCustom: true,
       content: buildInfoWindowContent(attraction),
-      offset: new AMap.Pixel(0, -52),
+      offset: new AMap.Pixel(0, -18),
       closeWhenClickMap: true,
     })
 
-    // 点击标记显示信息窗口
+    // 悬停显示纯文本tooltip，移出关闭
+    marker.on('mouseover', () => {
+      infoWindow.open(map, marker.getPosition())
+    })
+    marker.on('mouseout', () => {
+      infoWindow.close()
+    })
+    // 点击也显示，兼容触屏设备
     marker.on('click', () => {
       infoWindow.open(map, marker.getPosition())
     })
@@ -2551,7 +2542,7 @@ const drawRoutes = async (AMap: any, attractions: any[]): Promise<any[]> => {
 .budget-summary-panel {
   min-height: 100%;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1.2px solid rgba(255, 255, 255, 0.14);
   background: rgba(3, 10, 15, 0.88);
   padding: 18px;
   display: flex;
@@ -2669,6 +2660,7 @@ const drawRoutes = async (AMap: any, attractions: any[]): Promise<any[]> => {
 .map-card {
   height: 100%;
   min-height: 500px;
+  overflow: hidden;
 }
 
 .map-card :deep(.ant-card-body) {
@@ -3048,149 +3040,92 @@ const drawRoutes = async (AMap: any, attractions: any[]): Promise<any[]> => {
 
 .tripstar-map-marker {
   position: relative;
-  width: 44px;
-  height: 44px;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
 }
 
-.tripstar-map-marker__pulse {
-  position: absolute;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(215, 110, 66, 0.38) 0%, rgba(215, 110, 66, 0) 72%);
-  animation: tripstarMapPulse 2s ease-out infinite;
-}
-
 .tripstar-map-marker__core {
   position: relative;
-  z-index: 2;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 8px;
-  border-radius: 999px;
+  z-index: 1;
+  width: 20px;
+  height: 20px;
+  /* border-radius: 50%; */
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(140deg, var(--tripstar-map-accent) 0%, var(--tripstar-map-accent-strong) 100%);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-  border: 1px solid rgba(255, 255, 255, 0.65);
-  box-shadow: 0 8px 22px rgba(161, 70, 37, 0.46);
+  /* background: rgba(0, 0, 0, 0.86);
+  border: 1.2px solid rgba(255, 255, 255, 0.82);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45); */
 }
 
-.tripstar-map-marker__tag {
+.tripstar-map-marker__icon {
+  width: 12px;
+  height: 12px;
+  stroke: #ffffff;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.tripstar-map-marker__index {
   position: absolute;
-  right: -8px;
-  top: -6px;
-  z-index: 3;
-  min-width: 24px;
-  padding: 2px 6px;
-  border-radius: 999px;
-  background: rgba(11, 22, 30, 0.9);
-  color: #ffd8c8;
-  border: 1px solid rgba(255, 214, 194, 0.34);
-  font-size: 10px;
-  font-weight: 700;
-  text-align: center;
-  line-height: 1.2;
+  top: calc(100% + 1px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 15px;
+  font-weight: bold;
+  line-height: 1;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .tripstar-map-tooltip {
-  width: min(330px, calc(100vw - 42px));
-  border-radius: 16px;
-  border: 1px solid var(--tripstar-map-border);
-  background: linear-gradient(160deg, rgba(20, 33, 44, 0.98) 0%, var(--tripstar-map-surface) 100%);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 18px 36px rgba(4, 10, 15, 0.55);
+  max-width: min(320px, calc(100vw - 40px));
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
   color: var(--tripstar-map-text-main);
-  overflow: hidden;
-  position: relative;
-}
-
-.tripstar-map-tooltip__header {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 14px 10px;
-  border-bottom: 1px solid rgba(236, 243, 250, 0.12);
-  background: linear-gradient(130deg, rgba(215, 110, 66, 0.2) 0%, rgba(215, 110, 66, 0.05) 100%);
-}
-
-.tripstar-map-tooltip__title {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--tripstar-map-text-main);
-  line-height: 1.35;
-}
-
-.tripstar-map-tooltip__badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  max-width: 146px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: rgba(6, 15, 22, 0.72);
-  color: #ffd8c8;
-  border: 1px solid rgba(255, 216, 200, 0.34);
-  font-size: 10px;
-  font-weight: 600;
-  text-align: center;
-}
-
-.tripstar-map-tooltip__body {
-  display: grid;
-  gap: 8px;
-  padding: 12px 14px;
+  pointer-events: none;
 }
 
 .tripstar-map-tooltip__line {
   margin: 0;
-  display: grid;
-  gap: 4px;
   font-size: 12px;
-  line-height: 1.55;
-  color: var(--tripstar-map-text-main);
+  line-height: 1.45;
+  color: #ffd6c7 !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+  background-color: rgba(0, 0, 0, 0.05);
+  white-space: nowrap;
 }
 
-.tripstar-map-tooltip__label {
-  font-size: 11px;
-  color: var(--tripstar-map-text-sub);
-  letter-spacing: 0.02em;
+.tripstar-map-tooltip__line + .tripstar-map-tooltip__line {
+  margin-top: 2px;
 }
 
-.tripstar-map-tooltip__arrow {
-  position: absolute;
-  left: 50%;
-  bottom: -7px;
-  width: 14px;
-  height: 14px;
-  transform: translateX(-50%) rotate(45deg);
-  background: rgba(17, 29, 38, 0.98);
-  border-right: 1px solid var(--tripstar-map-border);
-  border-bottom: 1px solid var(--tripstar-map-border);
+.tripstar-map-tooltip__line--title {
+  font-size: 15px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+  font-weight: 700;
+  color: #ffffff !important;
 }
 
-@keyframes tripstarMapPulse {
-  0% {
-    transform: scale(0.72);
-    opacity: 0.52;
-  }
-  80% {
-    transform: scale(1.18);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(1.18);
-    opacity: 0;
-  }
+#amap-container .amap-info-content {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+#amap-container .amap-info-sharp {
+  display: none !important;
 }
 </style>
 
